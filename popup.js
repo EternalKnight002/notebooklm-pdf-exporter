@@ -2,28 +2,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const downloadButton = document.getElementById('download-btn');
 
     downloadButton.addEventListener('click', async () => {
-        // 1. Provide user feedback
         downloadButton.disabled = true;
         downloadButton.textContent = 'Extracting Notes...';
 
         try {
-            // 2. Get the current active tab
             const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-            // 3. Inject the content script into the active tab
             const injectionResults = await chrome.scripting.executeScript({
                 target: { tabId: tab.id },
                 files: ['content_script.js'],
             });
 
-            // The result is an array, we want the result from the first (and only) injection
             const { result: notesHtml } = injectionResults[0];
 
             if (!notesHtml) {
                 throw new Error("Could not find the notes container. Make sure you are on a NotebookLM page.");
             }
 
-            // 4. Generate and download the PDF
             downloadButton.textContent = 'Generating PDF...';
             generatePdf(notesHtml);
 
@@ -31,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Extension Error:", error);
             alert(`An error occurred: ${error.message}`);
         } finally {
-            // 5. Reset the button state
             downloadButton.disabled = false;
             downloadButton.textContent = 'Download Notes as PDF';
         }
@@ -43,21 +37,40 @@ document.addEventListener('DOMContentLoaded', () => {
  * @param {string} htmlContent The HTML content of the notes.
  */
 function generatePdf(htmlContent) {
-    // Format the filename with the current date
     const today = new Date();
     const formattedDate = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
     const filename = `NotebookLM-Notes-${formattedDate}.pdf`;
+    
+    const pdfStyles = `
+        <style>
+            body { font-family: sans-serif; }
+            table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+            th, td { border: 1px solid #dddddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            code { 
+                background-color: #eee; 
+                border-radius: 3px; 
+                font-family: courier, monospace;
+                padding: 0 3px; 
+            }
+            /* --- NEW: Add styles for headings --- */
+            h1, h2, h3, h4, h5, h6 {
+                text-align: left;
+                margin-top: 1.5rem;
+            }
+        </style>
+    `;
 
-    // Options for html2pdf.js
+    const fullHtml = pdfStyles + htmlContent;
+
     const opt = {
-        margin:       [0.5, 0.5, 0.5, 0.5], // Margins in inches [top, left, bottom, right]
+        margin:       [0.5, 0.5, 0.5, 0.5],
         filename:     filename,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true }, // Higher scale for better quality
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak:    { mode: 'avoid-all', avoid: ['h2', 'h3', 'h4', 'table', 'tr'] }
     };
 
-    // Use html2pdf library to generate the PDF
-    // The library is loaded via popup.html, so the `html2pdf` global is available.
-    html2pdf().from(htmlContent).set(opt).save();
+    html2pdf().from(fullHtml).set(opt).save();
 }
