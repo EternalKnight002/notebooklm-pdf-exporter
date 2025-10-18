@@ -2,8 +2,6 @@
 
 A simple yet powerful Chromium browser extension that allows you to download your notes from Google's NotebookLM as a clean, formatted PDF file. Perfect for archiving, sharing, or offline viewing of your AI-generated notes.
 
-
-
 ---
 
 ## ✨ Features
@@ -69,4 +67,4 @@ You can easily fix this by updating the selectors in **`content_script.js`**.
 
 ## 📜 License
 
-This project is licensed under the MIT License.
+This project is licensed under the GNU General Public License v3.0 .
