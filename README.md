@@ -67,4 +67,4 @@ You can easily fix this by updating the selectors in **`content_script.js`**.
 
 ## 📜 License
 
-This project is licensed under the GNU General Public License v3.0 .
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
